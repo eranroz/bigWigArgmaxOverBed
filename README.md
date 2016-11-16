@@ -9,6 +9,7 @@ Optional parameters:
 ```
     -h, --height: include the max height in additional column
     -z, --zero: treat non covered as zero (otherwise nan)
+    --bedOut: output as bed file
 ```    
 
 
