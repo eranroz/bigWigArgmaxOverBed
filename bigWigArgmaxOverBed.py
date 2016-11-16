@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-bigWigArgmaxOverBed - Compute the argmax score of big wig over each bed.
+bigWigArgmaxOverBed - Compute the argmax position of bigWig over each bed.
 
 usage: %prog in.bw in.bed
    -h, --height: include the height in additional column
@@ -9,7 +9,7 @@ usage: %prog in.bw in.bed
 
 
 The output columns are:
-   name - name field from bed, which should be unique (if bed has name column)
+   name - For bed with name field (otherwise skipped)
    argmax - position of argmax within each bed
 """
 import numpy as np
