@@ -17,6 +17,8 @@ import pandas as pd
 from bx.bbi.bigwig_file import BigWigFile
 from bx.cookbook import doc_optparse
 
+_default_score = 1000
+
 def argmax_max(bed_data):
     if np.isnan(bed_data).all():
         bed_argmax = 0
@@ -26,30 +28,42 @@ def argmax_max(bed_data):
         bed_max = np.nanmax(bed_data)
     return bed_argmax, bed_max
 
-
-def parse_bed_with_names(bed_csv):
-    for chrom, start, end, name in bed_csv.itertuples(index=False):
+def parse_bed_to_bed(bed_data):
+    has_name = bed_data.shape[1]>=4
+    has_strand= bed_data.shape[1]>=6
+    for bed_line in bed_data.itertuples(index=True):
+        i, chrom, start, end = bed_line[:4]
         bed_data = get_array(chrom, start, end)
         bed_argmax, bed_max = argmax_max(bed_data)
         bed_argmax = start+bed_argmax
-        if bed_out:
-            line = '%s\t%i\t%i\t%s'%(chrom,bed_argmax, bed_argmax, name)
+
+        line = '%s\t%i\t%i' %(chrom, bed_argmax, bed_argmax+1)
+        if has_name:
+            line += '\t%s' % bed_line[4]
         else:
-            line = '%s\t%i'%(name, bed_argmax)
-        if height:
-            line+='\t%.0f' % bed_max
+            line += '\t%i'%i
+
+        if height and has_strand:
+             line += '\t%.0f\t%s' % (bed_max, bed_line[6])
+        elif has_strand and not height:
+             line += '\t%i\t%s' % (_default_score, bed_line[6])
+        elif height:
+            line += '\t%.0f' % bed_max
         print(line)
 
-def parse_bed(bed_data):
-    for chrom, start, end in bed_data.itertuples(index=False):
+
+def parse_bed_to_tsv(bed_data):
+    has_name = bed_data.shape[1]>=4
+    for bed_line in bed_data.itertuples(index=True):
+        i, chrom, start, end = bed_line[:4]
         bed_data = get_array(chrom, start, end)
         bed_argmax, bed_max = argmax_max(bed_data)
         bed_argmax = start+bed_argmax
-
-        if bed_out:
-            line = '%s\t%i\t%i' %(chrom, bed_argmax, bed_argmax)
+        if has_name:
+            line = '%s\t%i' % (bed_line[4], bed_argmax)
         else:
             line = '%i' % bed_argmax
+
         if height:
             line += '\t%.0f' % bed_max
         print(line)
@@ -70,14 +84,9 @@ if zero:
 else:
     get_array = lambda chrom, start, end: bw_input.get_as_array(chrom, start, end)
 
-try:
-    data = pd.read_csv(in_bed, names=['chrom', 'start', 'end', 'name'], sep='\s+', header=None, usecols=[0, 1, 2, 3])
-    named = True
-except ValueError:
-    data = pd.read_csv(in_bed, names=['chrom', 'start', 'end'], sep='\s+', header=None, usecols=[0, 1, 2])
-    named = False
+data = pd.read_csv(in_bed, sep='\t', header=None).loc[:,:6]
 
-if named:
-    parse_bed_with_names(data)
+if bed_out:
+    parse_bed_to_bed(data)
 else:
-    parse_bed(data)
+    parse_bed_to_tsv(data)
