@@ -7,6 +7,7 @@ usage: %prog in.bw in.bed
    -h, --height: include the height in additional column
    -z, --zero: treat non covered as zero
    --bedOut: output as bed file
+   --valley: Find argmin instead of argmax
 
 The output columns are:
    name - For bed with name field (otherwise skipped)
@@ -19,13 +20,14 @@ from bx.cookbook import doc_optparse
 
 _default_score = 1000
 
+
 def argmax_max(bed_data):
     if np.isnan(bed_data).all():
         bed_argmax = 0
         bed_max = np.nan
     else:
-        bed_argmax = np.nanargmax(bed_data)
-        bed_max = np.nanmax(bed_data)
+        bed_argmax = arg_operator(bed_data)
+        bed_max = ex_operator(bed_data)
     return bed_argmax, bed_max
 
 def parse_bed_to_bed(bed_data):
@@ -73,6 +75,7 @@ try:
     height = options.height
     zero = options.zero or options.bedOut  # bedOut implicitly means zero
     bed_out = options.bedOut
+    valley = options.valley
 
     in_bigwig, in_bed = args
 except:
@@ -85,6 +88,8 @@ else:
     get_array = lambda chrom, start, end: bw_input.get_as_array(chrom, start, end)
 
 data = pd.read_csv(in_bed, sep='\t', header=None).loc[:,:6]
+arg_operator = np.nanargmin if valley else np.nanargmax 
+ex_operator = np.nanmin if valley else np.nanmax 
 
 if bed_out:
     parse_bed_to_bed(data)
